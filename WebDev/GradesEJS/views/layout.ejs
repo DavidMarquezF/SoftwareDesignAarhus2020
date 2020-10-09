@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html class="h-100">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/stylesheets/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body class="d-flex flex-column h-100">
+    <header>
+      <nav class="navbar navbar-dark bg-primary">
+        <a class="navbar-brand" href="/">Student Handler</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      </nav>
+    </header>
+    <div class="container-main">
+      <div class="bg-light border-right sidebar d-none d-sm-block">
+        <div class="list-group list-group-flush">
+          <a href="/" class="list-group-item list-group-item-action bg-light"
+            >Add Grade</a
+          >
+          <a
+            href="/students"
+            class="list-group-item list-group-item-action bg-light"
+            >Students</a
+          >
+        </div>
+      </div>
+      <main class="container-fluid"><%-body-%></main>
+    </div>
+
+    <footer class="footer py-4 bg-dark text-white-50">
+      <div class="container text-center">
+        <span>Test footer</span>
+      </div>
+    </footer>
+  </body>
+</html>
