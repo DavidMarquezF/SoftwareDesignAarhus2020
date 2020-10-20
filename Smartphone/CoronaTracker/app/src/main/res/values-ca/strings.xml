@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Corona Tracker</string>
+    <string name="label_exit">Sortir</string>
+    <string name="label_cases">Casos:</string>
+    <string name="label_deaths">Morts:</string>
+    <string name="label_back">Enrere</string>
+    <string name="label_edit">Editar</string>
+    <string name="label_user_rating">Valoració</string>
+    <string name="label_user_notes">Notes:</string>
+    <string name="label_cancel">Cancel·lar</string>
+    <string name="label_save">Desar</string>
+    <string name="label_no_notes">Sense notes</string>
+    <string name="label_notes">Notes</string>
+    <string name="title_details">Detalls del País</string>
+    <string name="title_edit">Editar País</string>
+    <string name="title_main">Llista de països</string>
+</resources>

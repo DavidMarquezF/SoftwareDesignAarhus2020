@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Corona Tracker</string>
+    <string name="label_exit">Exit</string>
+    <string name="label_cases">Cases:</string>
+    <string name="label_deaths">Deaths:</string>
+    <string name="label_back">Back</string>
+    <string name="label_edit">Edit</string>
+    <string name="label_user_rating">User rating</string>
+    <string name="label_user_notes">User Notes:</string>
+    <string name="label_cancel">Cancel</string>
+    <string name="label_save">Save</string>
+    <string name="label_no_notes">No notes</string>
+    <string name="label_notes">Notes</string>
+    <string name="title_details">Country Details</string>
+    <string name="title_edit">Edit Country</string>
+    <string name="title_main">Country List</string>
+</resources>

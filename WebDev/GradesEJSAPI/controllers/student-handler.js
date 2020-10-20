@@ -1,13 +1,17 @@
 const Student = require("../models/student");
 
 
-module.exports.addStudentGrade = function(req,res,next){
+module.exports.addStudentGrade = async function(req,res,next){
     const student = new Student({name: req.body.name, grade: req.body.grade});
-    student.save(function(err, result) {
-        if(err) console.error(err);
-        console.log(result);
-    });
-    res.redirect('/');
+    try{
+        await student.save();
+        res.send(student);
+    }
+    catch(err){
+        res.status(500)
+        .json({"errorMessage": "Error adding student"});
+    }
+    
 }
 
 module.exports.students = async function(req,res,next){
