@@ -1,13 +1,25 @@
 package com.au664966.coronatracker.model;
 
+import androidx.annotation.NonNull;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
+
+@Entity()
 public class Country {
     private String name;
+
+    @PrimaryKey()
+    @NonNull()
     private String code;
+
     private int cases;
     private int deaths;
+
     private Float rating;
     private String notes;
 
+    @Ignore
     public Country(String name, String code, int cases, int deaths) {
         this(name, code, cases, deaths, null, null);
     }

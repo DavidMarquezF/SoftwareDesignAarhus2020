@@ -1,7 +1,10 @@
 package com.au664966.coronatracker.viewmodel;
 
+import android.app.Application;
+
 import androidx.annotation.NonNull;
 import androidx.arch.core.util.Function;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.Transformations;
@@ -11,7 +14,7 @@ import com.au664966.coronatracker.model.Country;
 import com.au664966.coronatracker.model.Repository;
 import com.au664966.coronatracker.utility.Constants;
 
-public class DetailsViewModel extends ViewModel {
+public class DetailsViewModel extends AndroidViewModel {
     private LiveData<Country> country;
     private Repository repository;
 
@@ -19,8 +22,9 @@ public class DetailsViewModel extends ViewModel {
         return country;
     }
 
-    public DetailsViewModel(@NonNull SavedStateHandle savedStateHandle){
-        repository = Repository.getInstance();
+    public DetailsViewModel(@NonNull Application application, @NonNull SavedStateHandle savedStateHandle){
+        super(application);
+        repository = Repository.getInstance(application);
 
         // A way to obtain the Intent data from the ViewModel
         // https://stackoverflow.com/a/63082928

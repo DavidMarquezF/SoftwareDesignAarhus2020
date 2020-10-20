@@ -1,11 +1,12 @@
 package com.au664966.coronatracker.model;
 
-import androidx.arch.core.util.Function;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
+import android.app.Application;
 
-import java.util.ArrayList;
+import androidx.lifecycle.LiveData;
+
+import com.au664966.coronatracker.database.CountryDAO;
+import com.au664966.coronatracker.database.CountryDatabase;
+
 import java.util.List;
 
 /**
@@ -24,74 +25,85 @@ public class Repository {
      * This way we ensure that only one instance of the Repository exists during runtime
      */
     private static Repository instance;
-    private MutableLiveData<List<Country>> countries;
+    private LiveData<List<Country>> countries;
+    private CountryDAO _countryDao;
 
 
-    private Repository() {
+
+
+    private Repository(Application app) {
+
+        // There's no need to expose the entire database to the repository so we just expose the DAO
+        CountryDatabase db = CountryDatabase.getDatabase(app.getApplicationContext());
+        _countryDao = db.countryDAO();
+        countries = _countryDao.getAll();
     }
 
-    public static Repository getInstance() {
+    public static Repository getInstance(Application app) {
         if (instance == null) {
-            instance = new Repository();
+            instance = new Repository(app);
         }
         return instance;
     }
 
     public LiveData<List<Country>> getCountries() {
-        if (countries == null) {
-            countries = new MutableLiveData<>();
-            loadCountries();
-        }
-
         return countries;
     }
 
-    private void loadCountries() {
-        List<Country> countries = new ArrayList<>();
-        countries.add(new Country("Canada", "CA", 142866, 9248));
-        countries.add(new Country("China", "CN", 90294, 4736));
-        countries.add(new Country("Denmark", "DK", 21836, 635));
-        countries.add(new Country("Germany", "DE", 269048, 9376));
-        countries.add(new Country("Finland", "FI", 8799, 339));
-        countries.add(new Country("India", "IN", 5118253, 83198));
-        countries.add(new Country("Japan", "JP", 77488, 1490));
-        countries.add(new Country("Norway", "NO", 12644, 266));
-        countries.add(new Country("Russian", "RU", 1081152, 18996));
-        countries.add(new Country("Sweden", "SE", 87885, 5864));
-        countries.add(new Country("USA", "US", 6674411, 197633));
-        this.countries.setValue(countries);
+    /* //TODO: Delete this comment
+        private void loadCountries() {
+            List<Country> countries = new ArrayList<>();
+            countries.add(new Country("Canada", "CA", 142866, 9248));
+            countries.add(new Country("China", "CN", 90294, 4736));
+            countries.add(new Country("Denmark", "DK", 21836, 635));
+            countries.add(new Country("Germany", "DE", 269048, 9376));
+            countries.add(new Country("Finland", "FI", 8799, 339));
+            countries.add(new Country("India", "IN", 5118253, 83198));
+            countries.add(new Country("Japan", "JP", 77488, 1490));
+            countries.add(new Country("Norway", "NO", 12644, 266));
+            countries.add(new Country("Russian", "RU", 1081152, 18996));
+            countries.add(new Country("Sweden", "SE", 87885, 5864));
+            countries.add(new Country("USA", "US", 6674411, 197633));
+            this.countries.setValue(countries);
+        }
+    */
+
+    // Room executes all queries on a separate thread, so we don't need to handle queries as
+    // async tasks
+    public LiveData<Country> getCountryByCode(final String code) {
+        return this._countryDao.findCountry(code);
     }
 
-    public LiveData<Country> getCountryByCode(final String code) {
-        /*
-        This is a workaround to get the "Database behavior". When we modify an item we will update
-        The whole LiveData list and thus the observers of this will get notified. Even though this
-        is not really optimal, when the database is introduced in the next assignment, we will directly
-        obtain the LiveData object from the DAO. All this work is done so that I will have to do minimum
-        changes to get the database working in the next assignment.
-         */
-        return Transformations.map(countries, new Function<List<Country>, Country>() {
+    // Operations like inserting, updating and updating are executed on the same thread so we need
+    // To separate them
+    public void addCountry(final Country country) {
+        CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
             @Override
-            public Country apply(List<Country> count) {
-                for (int i = 0; i < count.size(); i++) {
-                    if (count.get(i).getCode().equals(code)) {
-                        return count.get(i);
-                    }
-                }
-                return null;
+            public void run() {
+                _countryDao.addCountry(country);
             }
         });
 
     }
 
-    /*
-    This function will be removed in the next assignment when we introduce the database, since updating
-    the items can be done directly from the ViewModel. I do it here so that we can notify the modification
-    of the list and the live data can be updated.
-     */
-    public void updateCountry(Country c, Float rating, String notes){
-        c.setNotes(notes);
-        c.setRating(rating);
-        countries.setValue(countries.getValue());
+    public void deleteCountry(final Country country){
+        CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                _countryDao.deleteCountry(country);
+            }
+        });
     }
+
+    public void updateCountry(final Country country){
+        CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                _countryDao.updateCountry(country);
+            }
+        });
+    }
+
+    //Threads: https://www.codejava.net/java-core/concurrency/java-concurrency-understanding-thread-pool-and-executors
+    // https://medium.com/@frank.tan/using-a-thread-pool-in-android-e3c88f59d07f
 }
