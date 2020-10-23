@@ -63,7 +63,10 @@ public class CountriesAdapter extends RecyclerView.Adapter<CountriesAdapter.Coun
 
     @Override
     public int getItemCount() {
-        return countries.size();
+        if(countries != null)
+            return countries.size();
+        else
+            return 0;
     }
 
     public interface ICountryClickListener {

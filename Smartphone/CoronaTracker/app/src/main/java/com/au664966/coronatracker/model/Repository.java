@@ -1,11 +1,21 @@
 package com.au664966.coronatracker.model;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.au664966.coronatracker.database.CountryDAO;
 import com.au664966.coronatracker.database.CountryDatabase;
+import com.au664966.coronatracker.model.covid19api.CountryAPI;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.util.List;
 
@@ -18,6 +28,8 @@ import java.util.List;
  * https://developer.android.com/jetpack/guide
  */
 public class Repository {
+
+    private static final String TAG = "Repository";
     /**
      * Singleton pattern implemented following
      * https://code.tutsplus.com/tutorials/android-design-patterns-the-singleton-pattern--cms-
@@ -27,7 +39,7 @@ public class Repository {
     private static Repository instance;
     private LiveData<List<Country>> countries;
     private CountryDAO _countryDao;
-
+    private RequestQueue queue;
 
 
 
@@ -36,6 +48,7 @@ public class Repository {
         // There's no need to expose the entire database to the repository so we just expose the DAO
         CountryDatabase db = CountryDatabase.getDatabase(app.getApplicationContext());
         _countryDao = db.countryDAO();
+        queue = Volley.newRequestQueue(app);
         countries = _countryDao.getAll();
     }
 
@@ -48,6 +61,27 @@ public class Repository {
 
     public LiveData<List<Country>> getCountries() {
         return countries;
+    }
+
+    public void updateCountries(){
+        final String url = "https://api.covid19api.com/summary";
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Gson gson = new GsonBuilder().create();
+                CountryAPI res = gson.fromJson(response, CountryAPI.class);
+                for (com.au664966.coronatracker.model.covid19api.Country country : res.getCountries()) {
+                    addCountry(new Country(country.getCountry(), country.getCountryCode(), country.getTotalConfirmed(), country.getTotalDeaths()));
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d(TAG, "onErrorResponse: "+ error.getMessage());
+            }
+        });
+        queue.add(stringRequest);
+
     }
 
     /* //TODO: Delete this comment

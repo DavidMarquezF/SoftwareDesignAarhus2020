@@ -37,8 +37,7 @@ public abstract class CountryDatabase extends RoomDatabase {
                     instance = Room.databaseBuilder(context.getApplicationContext(),
                             CountryDatabase.class, "country_database")
                             .fallbackToDestructiveMigration()
-                            .allowMainThreadQueries()
-                            .addCallback(_roomDatabaseCallback) //Used for debugging purposes
+                           // .addCallback(_roomDatabaseCallback) //Used for debugging purposes
                             .build();
                 }
             }
