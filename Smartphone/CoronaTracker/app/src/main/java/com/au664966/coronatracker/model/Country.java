@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey;
 
 @Entity()
 public class Country {
+
     private String name;
 
     @PrimaryKey()

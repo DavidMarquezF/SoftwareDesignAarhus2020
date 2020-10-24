@@ -14,4 +14,8 @@
     <string name="title_details">Country Details</string>
     <string name="title_edit">Edit Country</string>
     <string name="title_main">Country List</string>
+    <string name="title_add_country">Add Country</string>
+    <string name="label_country_name">Counrty Name</string>
+    <string name="error_country_exists">Country is already in your list</string>
+    <string name="error_cant_find">Country doesn\'t exist</string>
 </resources>

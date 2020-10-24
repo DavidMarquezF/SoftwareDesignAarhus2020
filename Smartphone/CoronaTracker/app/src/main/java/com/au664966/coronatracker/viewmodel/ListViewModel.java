@@ -25,5 +25,7 @@ public class ListViewModel extends AndroidViewModel {
         return countries;
     }
 
-
+    public void addCountry(String name, Repository.LoadingStatusCallback callback){
+        repository.findCountry(name, callback);
+    }
 }

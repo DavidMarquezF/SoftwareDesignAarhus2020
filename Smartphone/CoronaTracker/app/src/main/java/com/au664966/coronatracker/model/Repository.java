@@ -14,6 +14,7 @@ import com.android.volley.toolbox.Volley;
 import com.au664966.coronatracker.database.CountryDAO;
 import com.au664966.coronatracker.database.CountryDatabase;
 import com.au664966.coronatracker.model.covid19api.CountryAPI;
+import com.au664966.coronatracker.utility.ErrorCodes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -42,7 +43,6 @@ public class Repository {
     private RequestQueue queue;
 
 
-
     private Repository(Application app) {
 
         // There's no need to expose the entire database to the repository so we just expose the DAO
@@ -63,21 +63,38 @@ public class Repository {
         return countries;
     }
 
-    public void updateCountries(){
+    interface CountriesResponseCallback {
+        void callback(CountryAPI response);
+    }
+
+    public void updateCountries() {
+        this.getAllCountries(new CountriesResponseCallback() {
+            @Override
+            public void callback(CountryAPI response) {
+                for (com.au664966.coronatracker.model.covid19api.Country country : response.getCountries()) {
+                    //addCountry(new Country(country.getCountry(), country.getCountryCode(), country.getTotalConfirmed(), country.getTotalDeaths()));
+                }
+            }
+        });
+    }
+
+
+
+
+    private void getAllCountries(final CountriesResponseCallback callback) {
+
         final String url = "https://api.covid19api.com/summary";
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 Gson gson = new GsonBuilder().create();
                 CountryAPI res = gson.fromJson(response, CountryAPI.class);
-                for (com.au664966.coronatracker.model.covid19api.Country country : res.getCountries()) {
-                    addCountry(new Country(country.getCountry(), country.getCountryCode(), country.getTotalConfirmed(), country.getTotalDeaths()));
-                }
+                callback.callback(res);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.d(TAG, "onErrorResponse: "+ error.getMessage());
+                Log.d(TAG, "onErrorResponse: " + error.getMessage());
             }
         });
         queue.add(stringRequest);
@@ -110,17 +127,24 @@ public class Repository {
 
     // Operations like inserting, updating and updating are executed on the same thread so we need
     // To separate them
-    public void addCountry(final Country country) {
+    public void addCountry(final Country country, final StatusCallback callback) {
         CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                _countryDao.addCountry(country);
+                try {
+                    _countryDao.addCountry(country);
+                    callback.success();
+                }
+                catch (Exception ex){
+                    Log.e(TAG, "run: Add country", ex);
+                    callback.error(ErrorCodes.ALREADY_EXISTS);
+                }
             }
         });
 
     }
 
-    public void deleteCountry(final Country country){
+    public void deleteCountry(final Country country) {
         CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
             @Override
             public void run() {
@@ -129,7 +153,7 @@ public class Repository {
         });
     }
 
-    public void updateCountry(final Country country){
+    public void updateCountry(final Country country) {
         CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
             @Override
             public void run() {
@@ -138,6 +162,36 @@ public class Repository {
         });
     }
 
+    public interface StatusCallback {
+        void success();
+        void error(ErrorCodes code);
+    }
+
+    public interface LoadingStatusCallback extends StatusCallback{
+        void loading();
+    }
+
+    public void findCountry(final String name, final LoadingStatusCallback callback) {
+        callback.loading();
+        this.getAllCountries(new CountriesResponseCallback() {
+            @Override
+            public void callback(CountryAPI response) {
+                for(com.au664966.coronatracker.model.covid19api.Country c : response.getCountries()){
+                    if(c.getCountry().toLowerCase().equals(name.toLowerCase())){
+                        addCountry(countryFromAPI(c), callback); //TODO: Check if the country is already
+                        return;
+                    }
+                }
+                callback.error(ErrorCodes.NO_EXIST);
+            }
+        });
+    }
+
+    private Country countryFromAPI(com.au664966.coronatracker.model.covid19api.Country country){
+        return new Country(country.getCountry(), country.getCountryCode(), country.getTotalConfirmed(), country.getTotalDeaths());
+    }
+
     //Threads: https://www.codejava.net/java-core/concurrency/java-concurrency-understanding-thread-pool-and-executors
     // https://medium.com/@frank.tan/using-a-thread-pool-in-android-e3c88f59d07f
+    //HAndlig live data state: https://medium.com/androidxx/propagate-data-and-state-using-mediatorlivedata-7ea25582fa29
 }
