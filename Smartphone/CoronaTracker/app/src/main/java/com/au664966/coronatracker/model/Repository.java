@@ -71,15 +71,20 @@ public class Repository {
         this.getAllCountries(new CountriesResponseCallback() {
             @Override
             public void callback(CountryAPI response) {
-                for (com.au664966.coronatracker.model.covid19api.Country country : response.getCountries()) {
-                    //addCountry(new Country(country.getCountry(), country.getCountryCode(), country.getTotalConfirmed(), country.getTotalDeaths()));
+                for (Country userCountry : countries.getValue()) {
+                    for (com.au664966.coronatracker.model.covid19api.Country country : response.getCountries()) {
+                        if (userCountry.getCode().equals(country.getCountryCode())) {
+                            Country newCountry = countryFromAPI(country);
+                            newCountry.setRating(userCountry.getRating());
+                            newCountry.setNotes(userCountry.getNotes());
+                            updateCountry(newCountry);
+                        }
+                    }
                 }
+
             }
         });
     }
-
-
-
 
     private void getAllCountries(final CountriesResponseCallback callback) {
 
@@ -134,8 +139,7 @@ public class Repository {
                 try {
                     _countryDao.addCountry(country);
                     callback.success();
-                }
-                catch (Exception ex){
+                } catch (Exception ex) {
                     Log.e(TAG, "run: Add country", ex);
                     callback.error(ErrorCodes.ALREADY_EXISTS);
                 }
@@ -164,10 +168,11 @@ public class Repository {
 
     public interface StatusCallback {
         void success();
+
         void error(ErrorCodes code);
     }
 
-    public interface LoadingStatusCallback extends StatusCallback{
+    public interface LoadingStatusCallback extends StatusCallback {
         void loading();
     }
 
@@ -176,8 +181,8 @@ public class Repository {
         this.getAllCountries(new CountriesResponseCallback() {
             @Override
             public void callback(CountryAPI response) {
-                for(com.au664966.coronatracker.model.covid19api.Country c : response.getCountries()){
-                    if(c.getCountry().toLowerCase().equals(name.toLowerCase())){
+                for (com.au664966.coronatracker.model.covid19api.Country c : response.getCountries()) {
+                    if (c.getCountry().toLowerCase().equals(name.toLowerCase())) {
                         addCountry(countryFromAPI(c), callback); //TODO: Check if the country is already
                         return;
                     }
@@ -187,7 +192,7 @@ public class Repository {
         });
     }
 
-    private Country countryFromAPI(com.au664966.coronatracker.model.covid19api.Country country){
+    private Country countryFromAPI(com.au664966.coronatracker.model.covid19api.Country country) {
         return new Country(country.getCountry(), country.getCountryCode(), country.getTotalConfirmed(), country.getTotalDeaths());
     }
 

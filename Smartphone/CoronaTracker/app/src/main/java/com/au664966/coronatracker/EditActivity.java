@@ -13,8 +13,9 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.au664966.coronatracker.model.Country;
-import com.au664966.coronatracker.utility.CountryCodeToResourceId;
+import com.au664966.coronatracker.utility.CountryCodeToUrl;
 import com.au664966.coronatracker.viewmodel.EditViewModel;
+import com.bumptech.glide.Glide;
 import com.google.android.material.slider.Slider;
 
 public class EditActivity extends AppCompatActivity {
@@ -86,7 +87,7 @@ public class EditActivity extends AppCompatActivity {
         nameTxt.setText(country.getName());
         ratingSlider.setValue(country.getRating() == null ? 5 : country.getRating());
         notesEdt.setText(country.getNotes());
-        flagImg.setImageResource(CountryCodeToResourceId.convert(this, country.getCode()));
+        Glide.with(this).load(CountryCodeToUrl.convert(country.getCode())).into(flagImg);
     }
 
 }

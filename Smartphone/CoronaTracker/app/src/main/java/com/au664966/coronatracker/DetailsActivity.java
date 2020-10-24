@@ -7,15 +7,15 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.au664966.coronatracker.model.Country;
 import com.au664966.coronatracker.utility.Constants;
-import com.au664966.coronatracker.utility.CountryCodeToResourceId;
+import com.au664966.coronatracker.utility.CountryCodeToUrl;
 import com.au664966.coronatracker.viewmodel.DetailsViewModel;
+import com.bumptech.glide.Glide;
 
 public class DetailsActivity extends AppCompatActivity {
 
@@ -82,7 +82,7 @@ public class DetailsActivity extends AppCompatActivity {
             notesTxt.setText(country.getNotes());
         }
 
-        flagImg.setImageResource(CountryCodeToResourceId.convert(this, country.getCode()));
+        Glide.with(this).load(CountryCodeToUrl.convert(country.getCode())).into(flagImg);
     }
 
 

@@ -17,10 +17,11 @@
         app:layout_constraintStart_toEndOf="@+id/img_flag"
         app:layout_constraintTop_toTopOf="@+id/img_flag"
         tools:text="Canada" />
+
     <ImageView
         android:id="@+id/img_flag"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="@dimen/flag_width"
+        android:layout_height="@dimen/flag_height"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"

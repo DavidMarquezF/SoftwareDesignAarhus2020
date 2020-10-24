@@ -68,7 +68,7 @@ public class RefreshDataService extends Service {
                 mainHandler.post(new Runnable() {
                     @Override
                     public void run() {
-
+                        repo.updateCountries(); //TODO: Communicate error refreshing
                     }
                 });
 
