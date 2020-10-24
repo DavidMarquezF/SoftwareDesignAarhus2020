@@ -15,4 +15,10 @@
     <string name="title_details">Detalls del País</string>
     <string name="title_edit">Editar País</string>
     <string name="title_main">Llista de països</string>
+    <string name="title_add_country">Afegir País</string>
+    <string name="label_country_name">Nom del país</string>
+    <string name="error_country_exists">Aquest país ja consta en la teva llista</string>
+    <string name="error_cant_find">País no existeix</string>
+    <string name="success_country_added">País afegit amb èxit!</string>
+    <string name="label_add">Afegir</string>
 </resources>

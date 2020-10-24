@@ -82,17 +82,19 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
     }
 
     private void showCountryFinder() {
-        //https://stackoverflow.com/questions/10903754/input-text-dialog-android
+        // Dialog implementation inspired by
+        // https://stackoverflow.com/questions/10903754/input-text-dialog-android
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.title_add_country);
-        View viewInflated = LayoutInflater.from(this).inflate(R.layout.partial_single_input,null);
-// Set up the input
+        View viewInflated = LayoutInflater.from(this).inflate(R.layout.partial_single_input, null);
+        // Set up the input
         final EditText input = (EditText) viewInflated.findViewById(R.id.input);
-// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
         builder.setView(viewInflated);
 
-// Set up the buttons
-        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+        // Set up the buttons
+        builder.setPositiveButton(R.string.label_add, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
@@ -104,7 +106,7 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
 
                     @Override
                     public void success() {
-                        Snackbar.make(coordinatorLayout, "Country added successfully", Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(coordinatorLayout, R.string.success_country_added, Snackbar.LENGTH_SHORT).show();
                     }
 
                     @Override

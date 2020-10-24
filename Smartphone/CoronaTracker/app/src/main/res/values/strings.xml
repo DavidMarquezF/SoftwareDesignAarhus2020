@@ -18,4 +18,6 @@
     <string name="label_country_name">Counrty Name</string>
     <string name="error_country_exists">Country is already in your list</string>
     <string name="error_cant_find">Country doesn\'t exist</string>
+    <string name="success_country_added">Country added successfully!</string>
+    <string name="label_add">Add</string>
 </resources>
