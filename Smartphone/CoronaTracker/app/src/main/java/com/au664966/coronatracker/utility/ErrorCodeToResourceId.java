@@ -10,6 +10,8 @@ public class ErrorCodeToResourceId {
                 return R.string.error_cant_find;
             case ALREADY_EXISTS:
                 return R.string.error_country_exists;
+            case DELETE_ERROR:
+                return R.string.error_delete;
             default:
                 return -1;
         }

@@ -12,16 +12,20 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.au664966.coronatracker.model.Country;
+import com.au664966.coronatracker.model.Repository;
 import com.au664966.coronatracker.utility.Constants;
 import com.au664966.coronatracker.utility.CountryCodeToUrl;
+import com.au664966.coronatracker.utility.ErrorCodeToResourceId;
+import com.au664966.coronatracker.utility.ErrorCodes;
 import com.au664966.coronatracker.viewmodel.DetailsViewModel;
 import com.bumptech.glide.Glide;
+import com.google.android.material.snackbar.Snackbar;
 
 public class DetailsActivity extends AppCompatActivity {
 
     private ImageView flagImg;
     private TextView nameTxt, casesTxt, deathsTxt, notesTxt, ratingTxt;
-    private Button editBtn;
+    private Button editBtn, deleteBtn;
 
     private DetailsViewModel vm;
 
@@ -40,13 +44,29 @@ public class DetailsActivity extends AppCompatActivity {
         notesTxt = findViewById(R.id.txt_user_notes);
         ratingTxt = findViewById(R.id.txt_rating);
         flagImg = findViewById(R.id.img_flag);
-
+        deleteBtn = findViewById(R.id.btn_delete);
         editBtn = findViewById(R.id.btn_exit);
 
         editBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 showEditActivity();
+            }
+        });
+        deleteBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                vm.deleteCountry(new Repository.StatusCallback() {
+                    @Override
+                    public void success() {
+                        finish();
+                    }
+
+                    @Override
+                    public void error(ErrorCodes code) {
+                        Snackbar.make(getWindow().getDecorView().getRootView(), ErrorCodeToResourceId.convert(code), Snackbar.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
 
@@ -72,6 +92,8 @@ public class DetailsActivity extends AppCompatActivity {
     }
 
     private void updateUI(Country country) {
+        if(country == null)
+            return;
         nameTxt.setText(country.getName());
         casesTxt.setText("" + country.getCases());
         deathsTxt.setText("" + country.getDeaths());

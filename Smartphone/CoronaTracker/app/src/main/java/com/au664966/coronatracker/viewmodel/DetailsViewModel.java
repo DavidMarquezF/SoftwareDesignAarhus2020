@@ -36,5 +36,10 @@ public class DetailsViewModel extends AndroidViewModel {
         });
     }
 
+    public void deleteCountry(Repository.StatusCallback callback){
+        repository.deleteCountry(country.getValue(), callback);
+    }
+
+
 
 }

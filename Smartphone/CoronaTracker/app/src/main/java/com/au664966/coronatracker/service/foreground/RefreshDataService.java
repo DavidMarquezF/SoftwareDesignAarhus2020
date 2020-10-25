@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
@@ -19,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class RefreshDataService extends Service {
+    private static final String TAG = "RefreshDataService";
     public static final String REFRESH_DATA_CHANNEL = "refreshDataChannel";
     public static final int NOTIFICATION_ID = 44;
     private ExecutorService executorService;
@@ -35,6 +37,7 @@ public class RefreshDataService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "onStartCommand: Initializing service");
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             NotificationChannel channel = new NotificationChannel(REFRESH_DATA_CHANNEL, "Refresh Data", NotificationManager.IMPORTANCE_DEFAULT);
             NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -58,13 +61,7 @@ public class RefreshDataService extends Service {
         currentTask = executorService.submit(new Runnable() {
             @Override
             public void run() {
-                try {
-                    Thread.sleep(60000);
-                } catch (InterruptedException e) {
-                    // The thread has been interrupted so we have to finish the recursive work
-                    // Returning here basically does that since the function will not be called again
-                    return;
-                }
+                Log.d(TAG, "run: Updating countries data");
                 mainHandler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -72,6 +69,13 @@ public class RefreshDataService extends Service {
                     }
                 });
 
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    // The thread has been interrupted so we have to finish the recursive work
+                    // Returning here basically does that since the function will not be called again
+                    return;
+                }
                 updateNotificationAndData();
             }
         });
@@ -80,6 +84,7 @@ public class RefreshDataService extends Service {
 
     @Override
     public void onDestroy() {
+        Log.d(TAG, "onDestroy: Destroying service");
         if(currentTask != null){
             currentTask.cancel(true);
         }

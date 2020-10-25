@@ -106,24 +106,6 @@ public class Repository {
 
     }
 
-    /* //TODO: Delete this comment
-        private void loadCountries() {
-            List<Country> countries = new ArrayList<>();
-            countries.add(new Country("Canada", "CA", 142866, 9248));
-            countries.add(new Country("China", "CN", 90294, 4736));
-            countries.add(new Country("Denmark", "DK", 21836, 635));
-            countries.add(new Country("Germany", "DE", 269048, 9376));
-            countries.add(new Country("Finland", "FI", 8799, 339));
-            countries.add(new Country("India", "IN", 5118253, 83198));
-            countries.add(new Country("Japan", "JP", 77488, 1490));
-            countries.add(new Country("Norway", "NO", 12644, 266));
-            countries.add(new Country("Russian", "RU", 1081152, 18996));
-            countries.add(new Country("Sweden", "SE", 87885, 5864));
-            countries.add(new Country("USA", "US", 6674411, 197633));
-            this.countries.setValue(countries);
-        }
-    */
-
     // Room executes all queries on a separate thread, so we don't need to handle queries as
     // async tasks
     public LiveData<Country> getCountryByCode(final String code) {
@@ -131,28 +113,34 @@ public class Repository {
     }
 
     // Operations like inserting, updating and updating are executed on the same thread so we need
-    // To separate them
+    // to separate them
     public void addCountry(final Country country, final StatusCallback callback) {
         CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 try {
                     _countryDao.addCountry(country);
-                    callback.success();
                 } catch (Exception ex) {
                     Log.e(TAG, "run: Add country", ex);
                     callback.error(ErrorCodes.ALREADY_EXISTS);
                 }
+                callback.success();
             }
         });
 
     }
 
-    public void deleteCountry(final Country country) {
+    public void deleteCountry(final Country country, final StatusCallback callback) {
         CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                _countryDao.deleteCountry(country);
+                try {
+                    _countryDao.deleteCountry(country);
+                }
+                catch (Exception ex){
+                    callback.error(ErrorCodes.DELETE_ERROR);
+                }
+                callback.success();
             }
         });
     }
