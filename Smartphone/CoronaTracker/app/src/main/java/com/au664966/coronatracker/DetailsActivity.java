@@ -104,7 +104,7 @@ public class DetailsActivity extends AppCompatActivity {
             notesTxt.setText(country.getNotes());
         }
 
-        Glide.with(this).load(CountryCodeToUrl.convert(country.getCode())).into(flagImg);
+        Glide.with(this).load(CountryCodeToUrl.convert(country.getCode())).apply(Constants.getFlagDefualtOptions()).into(flagImg);
     }
 
 

@@ -12,8 +12,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.au664966.coronatracker.R;
 import com.au664966.coronatracker.model.Country;
+import com.au664966.coronatracker.utility.Constants;
 import com.au664966.coronatracker.utility.CountryCodeToUrl;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 
 import java.util.List;
 
@@ -58,7 +60,7 @@ public class CountriesAdapter extends RecyclerView.Adapter<CountriesAdapter.Coun
         holder.name.setText(country.getName());
         holder.description.setText(country.getCases()+" / "+country.getDeaths());
         holder.rating.setText(country.getRating() == null ? "-" : country.getRating().toString());
-        Glide.with(context).load(CountryCodeToUrl.convert(country.getCode())).into(holder.flag);
+        Glide.with(context).load(CountryCodeToUrl.convert(country.getCode())).apply(Constants.getFlagDefualtOptions()).into(holder.flag);
     }
 
 
