@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -23,8 +24,9 @@ import com.google.android.material.snackbar.Snackbar;
 
 public class DetailsActivity extends AppCompatActivity {
 
+    public static final int NAV_EDIT_ACT = 200;
     private ImageView flagImg;
-    private TextView nameTxt, casesTxt, deathsTxt, notesTxt, ratingTxt;
+    private TextView nameTxt, casesTxt, deathsTxt, notesTxt, ratingTxt, newCasesTxt, newDeathsTxt;
     private Button editBtn, deleteBtn;
 
     private DetailsViewModel vm;
@@ -46,6 +48,8 @@ public class DetailsActivity extends AppCompatActivity {
         flagImg = findViewById(R.id.img_flag);
         deleteBtn = findViewById(R.id.btn_delete);
         editBtn = findViewById(R.id.btn_exit);
+        newCasesTxt = findViewById(R.id.txt_new_cases);
+        newDeathsTxt = findViewById(R.id.txt_new_deaths);
 
         editBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,16 +92,20 @@ public class DetailsActivity extends AppCompatActivity {
     private void showEditActivity() {
         Intent nav = new Intent(this, EditActivity.class);
         nav.putExtra(Constants.EXTRA_COUNTRY_CODE, vm.getCountry().getValue().getCode());
-        startActivity(nav);
+        startActivityForResult(nav, NAV_EDIT_ACT);
     }
 
     private void updateUI(Country country) {
-        if(country == null)
+        if(country == null){
+            finish();
             return;
+        }
         nameTxt.setText(country.getName());
         casesTxt.setText("" + country.getCases());
         deathsTxt.setText("" + country.getDeaths());
         ratingTxt.setText(country.getRating() == null ? "-" : country.getRating().toString());
+        newCasesTxt.setText(""+country.getNewCases());
+        newDeathsTxt.setText(""+country.getNewDeaths());
         if (country.getNotes() == null  || country.getNotes().isEmpty()) {
             notesTxt.setText(R.string.label_no_notes);
         } else {
@@ -107,5 +115,11 @@ public class DetailsActivity extends AppCompatActivity {
         Glide.with(this).load(CountryCodeToUrl.convert(country.getCode())).apply(Constants.getFlagDefualtOptions()).into(flagImg);
     }
 
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if(requestCode == NAV_EDIT_ACT && resultCode == RESULT_OK){
+            finish();
+        }
+        super.onActivityResult(requestCode,resultCode, data);
+    }
 }

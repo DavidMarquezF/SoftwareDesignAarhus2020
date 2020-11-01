@@ -15,8 +15,8 @@ import com.au664966.coronatracker.model.Repository;
 import com.au664966.coronatracker.utility.Constants;
 
 public class EditViewModel extends AndroidViewModel {
-    private LiveData<Country> country;
-    private Repository repository;
+    private final LiveData<Country> country;
+    private final Repository repository;
 
     public LiveData<Country> getCountry(){
         return country;
@@ -37,8 +37,6 @@ public class EditViewModel extends AndroidViewModel {
     }
 
     public void saveCountry(String notes, Float rating){
-        country.getValue().setNotes(notes);
-        country.getValue().setRating(rating);
-        repository.updateCountry(country.getValue());
+        repository.updateCountryUserData(country.getValue().getCode(), notes, rating);
     }
 }

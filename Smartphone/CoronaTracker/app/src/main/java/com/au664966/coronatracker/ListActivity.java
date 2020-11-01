@@ -7,9 +7,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.Group;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -20,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.au664966.coronatracker.adapter.CountriesAdapter;
 import com.au664966.coronatracker.model.Country;
 import com.au664966.coronatracker.model.Repository;
+import com.au664966.coronatracker.service.foreground.RefreshDataService;
 import com.au664966.coronatracker.utility.Constants;
 import com.au664966.coronatracker.utility.ErrorCodeToResourceId;
 import com.au664966.coronatracker.utility.ErrorCodes;
@@ -31,9 +34,11 @@ import java.util.List;
 
 public class ListActivity extends AppCompatActivity implements CountriesAdapter.ICountryClickListener {
     private RecyclerView rv;
-    private Button exitBtn;
+    private Button exitBtn, addDefaultCountriesBtn;
     private FloatingActionButton fab;
     private CoordinatorLayout coordinatorLayout;
+    private ProgressBar progressBar;
+    private Group emptyGroup;
 
     private CountriesAdapter adapter;
 
@@ -50,9 +55,15 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
         exitBtn = findViewById(R.id.btn_exit);
         fab = findViewById(R.id.fab_add);
         coordinatorLayout = findViewById(R.id.coordinator);
+        progressBar = findViewById(R.id.progressBar);
+        rv = findViewById(R.id.list_country);
+        emptyGroup = findViewById(R.id.empty_group);
+        addDefaultCountriesBtn = findViewById(R.id.btn_add_default);
+
+        updateEnabledUi(false);
+        updateEmptyRecyclerView(false);
 
         adapter = new CountriesAdapter(this);
-        rv = findViewById(R.id.list_country);
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
 
@@ -71,14 +82,65 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
                 showCountryFinder();
             }
         });
+        addDefaultCountriesBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                vm.addDefaultCountries();
+            }
+        });
 
         vm = new ViewModelProvider(this).get(ListViewModel.class);
         vm.getCountries().observe(this, new Observer<List<Country>>() {
             @Override
             public void onChanged(List<Country> countries) {
                 adapter.updateCountriesList(countries);
+                Repository.InitializingStatus status = vm.getInitializingDatabse().getValue();
+                updateEmptyRecyclerView(status != Repository.InitializingStatus.LOADING && (countries == null || countries.size() <= 0));
             }
         });
+
+
+        vm.getInitializingDatabse().observe(this, new Observer<Repository.InitializingStatus>() {
+            @Override
+            public void onChanged(Repository.InitializingStatus status) {
+                switch (status) {
+                    case ERROR:
+                        Snackbar.make(coordinatorLayout, ErrorCodeToResourceId.convert(ErrorCodes.INITIALIZING_ERROR), Snackbar.LENGTH_LONG).show();
+                        break;
+                    case FINALIZE:
+                        List<Country> countries = vm.getCountries().getValue();
+                        updateEmptyRecyclerView(countries == null || countries.size() <= 0);
+                        break;
+                }
+                updateEnabledUi(status != Repository.InitializingStatus.LOADING);
+
+
+            }
+        });
+
+        startService(new Intent(getApplicationContext(), RefreshDataService.class));
+    }
+
+    private void updateEmptyRecyclerView(boolean isempty) {
+        if (isempty) {
+            emptyGroup.setVisibility(View.VISIBLE);
+            rv.setVisibility(View.GONE);
+        } else {
+            emptyGroup.setVisibility(View.GONE);
+            rv.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void updateEnabledUi(boolean enabled) {
+        if (!enabled) {
+            fab.setEnabled(false);
+            rv.setVisibility(View.GONE);
+            progressBar.setVisibility(View.VISIBLE);
+        } else {
+            fab.setEnabled(true);
+            rv.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.GONE);
+        }
     }
 
     private void showCountryFinder() {
@@ -101,17 +163,35 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
                 vm.addCountry(input.getText().toString(), new Repository.LoadingStatusCallback() {
                     @Override
                     public void loading() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                fab.setEnabled(false);
+                            }
+                        });
 
                     }
 
                     @Override
                     public void success() {
-                        Snackbar.make(coordinatorLayout, R.string.success_country_added, Snackbar.LENGTH_SHORT).show();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Snackbar.make(coordinatorLayout, R.string.success_country_added, Snackbar.LENGTH_SHORT).show();
+                                fab.setEnabled(true);
+                            }
+                        });
                     }
 
                     @Override
-                    public void error(ErrorCodes code) {
-                        Snackbar.make(coordinatorLayout, ErrorCodeToResourceId.convert(code), Snackbar.LENGTH_SHORT).show();
+                    public void error(final ErrorCodes code) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Snackbar.make(coordinatorLayout, ErrorCodeToResourceId.convert(code), Snackbar.LENGTH_SHORT).show();
+                                fab.setEnabled(true);
+                            }
+                        });
                     }
                 });
             }

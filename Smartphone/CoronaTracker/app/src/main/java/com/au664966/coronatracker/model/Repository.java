@@ -1,24 +1,24 @@
 package com.au664966.coronatracker.model;
 
 import android.app.Application;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
 import com.au664966.coronatracker.database.CountryDAO;
 import com.au664966.coronatracker.database.CountryDatabase;
 import com.au664966.coronatracker.model.covid19api.CountryAPI;
+import com.au664966.coronatracker.service.WebService;
+import com.au664966.coronatracker.utility.CountriesResponseCallback;
 import com.au664966.coronatracker.utility.ErrorCodes;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Implemented Repository pattern so that when we need to add a database or access to the cloud the
@@ -38,18 +38,64 @@ public class Repository {
      * This way we ensure that only one instance of the Repository exists during runtime
      */
     private static Repository instance;
-    private LiveData<List<Country>> countries;
-    private CountryDAO _countryDao;
-    private RequestQueue queue;
+    private final LiveData<List<Country>> countries;
+    private final MutableLiveData<InitializingStatus> _initializingDatabase;
+    private final CountryDAO _countryDao;
+    private final WebService _webService;
 
+    public enum InitializingStatus {
+        SUCCESS_OPEN,
+        SUCCESS_INIT,
+        ERROR,
+        LOADING,
+        FINALIZE
+    }
+
+    public LiveData<InitializingStatus> getInitializingDatabase() {
+        return _initializingDatabase;
+    }
 
     private Repository(Application app) {
+        _initializingDatabase = new MutableLiveData<>(InitializingStatus.LOADING);
+        _webService = new WebService(app);
 
+
+        final Handler mainHandler = new Handler(app.getMainLooper());
+        // Since OnCreateDatabase is called on another thread, we cannot assure that _countryDao
+        // will have a value, thus we use a lock to make sure that _countryDao has a correct value
+        final ReentrantLock lock = new ReentrantLock();
+        lock.lock();
         // There's no need to expose the entire database to the repository so we just expose the DAO
-        CountryDatabase db = CountryDatabase.getDatabase(app.getApplicationContext());
+        CountryDatabase db = CountryDatabase.getDatabase(app.getApplicationContext(), new CountryDatabase.InitializeCallback() {
+            private boolean isInitializing = false;
+
+            @Override
+            public void OnCreateDatabase() {
+                isInitializing = true;
+                lock.lock();
+                addDefaultCountries();
+            }
+
+            @Override
+            public void OnOpenDatabase() {
+                if (!isInitializing)
+                    setInitializationDone(InitializingStatus.SUCCESS_OPEN);
+            }
+
+            private void setInitializationDone(final InitializingStatus status) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        _initializingDatabase.setValue(status);
+                        _initializingDatabase.setValue(InitializingStatus.FINALIZE);
+                    }
+                });
+            }
+        });
+
         _countryDao = db.countryDAO();
-        queue = Volley.newRequestQueue(app);
         countries = _countryDao.getAll();
+        lock.unlock();
     }
 
     public static Repository getInstance(Application app) {
@@ -59,18 +105,48 @@ public class Repository {
         return instance;
     }
 
+    public void addDefaultCountries(){
+        final List<String> codes = Arrays.asList("CA", "CN", "DK", "DE", "FI", "IN", "JP", "NO", "RU", "SE", "US");
+
+        final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+        findAndAddCountriesByCode(codes, new StatusCallback() {
+            @Override
+            public void success() {
+                setInitializationDone(InitializingStatus.SUCCESS_INIT);
+            }
+
+            @Override
+            public void error(ErrorCodes code) {
+                setInitializationDone(InitializingStatus.ERROR);
+            }
+
+            private void setInitializationDone(final InitializingStatus status){
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        _initializingDatabase.setValue(status);
+                        _initializingDatabase.setValue(InitializingStatus.FINALIZE);
+                    }
+                });
+            }
+        });
+    }
+
     public LiveData<List<Country>> getCountries() {
         return countries;
     }
 
-    interface CountriesResponseCallback {
-        void callback(CountryAPI response);
-    }
-
     public void updateCountries() {
-        this.getAllCountries(new CountriesResponseCallback() {
+        // It doesn't make sense to waste bandwidth if we are not going to be able to update any country
+        if (countries.getValue() == null || countries.getValue().size() <= 0)
+            return;
+
+        this._webService.getAllCountriesSummaries(new CountriesResponseCallback() {
             @Override
-            public void callback(CountryAPI response) {
+            public void success(CountryAPI response) {
+                if (countries.getValue() == null || response.getCountries() == null)
+                    return;
                 for (Country userCountry : countries.getValue()) {
                     for (com.au664966.coronatracker.model.covid19api.Country country : response.getCountries()) {
                         if (userCountry.getCode().equals(country.getCountryCode())) {
@@ -83,27 +159,12 @@ public class Repository {
                 }
 
             }
-        });
-    }
 
-    private void getAllCountries(final CountriesResponseCallback callback) {
-
-        final String url = "https://api.covid19api.com/summary";
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
             @Override
-            public void onResponse(String response) {
-                Gson gson = new GsonBuilder().create();
-                CountryAPI res = gson.fromJson(response, CountryAPI.class);
-                callback.callback(res);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.d(TAG, "onErrorResponse: " + error.getMessage());
+            public void error(Exception error) {
+                Log.e(TAG, "error: ", error);
             }
         });
-        queue.add(stringRequest);
-
     }
 
     // Room executes all queries on a separate thread, so we don't need to handle queries as
@@ -114,7 +175,7 @@ public class Repository {
 
     // Operations like inserting, updating and updating are executed on the same thread so we need
     // to separate them
-    public void addCountry(final Country country, final StatusCallback callback) {
+    public void addCountry(final Country country, final @Nullable StatusCallback callback) {
         CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
             @Override
             public void run() {
@@ -122,13 +183,19 @@ public class Repository {
                     _countryDao.addCountry(country);
                 } catch (Exception ex) {
                     Log.e(TAG, "run: Add country", ex);
-                    callback.error(ErrorCodes.ALREADY_EXISTS);
+                    if (callback != null) {
+                        callback.error(ErrorCodes.ALREADY_EXISTS);
+                    }
+                    return;
                 }
-                callback.success();
+                if (callback != null) {
+                    callback.success();
+                }
             }
         });
 
     }
+
 
     public void deleteCountry(final Country country, final StatusCallback callback) {
         CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
@@ -136,8 +203,7 @@ public class Repository {
             public void run() {
                 try {
                     _countryDao.deleteCountry(country);
-                }
-                catch (Exception ex){
+                } catch (Exception ex) {
                     callback.error(ErrorCodes.DELETE_ERROR);
                 }
                 callback.success();
@@ -154,6 +220,15 @@ public class Repository {
         });
     }
 
+    public void updateCountryUserData(final String code, final String notes, final Float rating) {
+        CountryDatabase.databaseWriteExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                _countryDao.updateCountry(code, notes, rating);
+            }
+        });
+    }
+
     public interface StatusCallback {
         void success();
 
@@ -164,11 +239,11 @@ public class Repository {
         void loading();
     }
 
-    public void findCountry(final String name, final LoadingStatusCallback callback) {
+    public void findAndAddCountryByName(final String name, final LoadingStatusCallback callback) {
         callback.loading();
-        this.getAllCountries(new CountriesResponseCallback() {
+        this._webService.getAllCountriesSummaries(new CountriesResponseCallback() {
             @Override
-            public void callback(CountryAPI response) {
+            public void success(CountryAPI response) {
                 for (com.au664966.coronatracker.model.covid19api.Country c : response.getCountries()) {
                     if (c.getCountry().toLowerCase().equals(name.toLowerCase())) {
                         addCountry(countryFromAPI(c), callback); //TODO: Check if the country is already
@@ -177,11 +252,40 @@ public class Repository {
                 }
                 callback.error(ErrorCodes.NO_EXIST);
             }
+
+            @Override
+            public void error(Exception error) {
+                callback.error(ErrorCodes.NETWORK_ERROR);
+            }
         });
     }
 
+    public void findAndAddCountriesByCode(final List<String> codes, final StatusCallback callback) {
+        _webService.getAllCountriesSummaries(new CountriesResponseCallback() {
+            @Override
+            public void success(CountryAPI response) {
+                for (com.au664966.coronatracker.model.covid19api.Country c : response.getCountries()) {
+                    String countryCode = c.getCountryCode().toLowerCase();
+                    for (String code : codes) {
+                        if (countryCode.equals(code.toLowerCase())) {
+                            addCountry(countryFromAPI(c), null); //TODO: Check if the country is already
+                        }
+                    }
+                }
+                callback.success();
+            }
+
+            @Override
+            public void error(Exception error) {
+                callback.error(ErrorCodes.NETWORK_ERROR);
+            }
+
+        });
+    }
+
+
     private Country countryFromAPI(com.au664966.coronatracker.model.covid19api.Country country) {
-        return new Country(country.getCountry(), country.getCountryCode(), country.getTotalConfirmed(), country.getTotalDeaths());
+        return new Country(country.getCountry(), country.getCountryCode(), country.getTotalConfirmed(), country.getTotalDeaths(), country.getNewConfirmed(), country.getNewDeaths());
     }
 
     //Threads: https://www.codejava.net/java-core/concurrency/java-concurrency-understanding-thread-pool-and-executors

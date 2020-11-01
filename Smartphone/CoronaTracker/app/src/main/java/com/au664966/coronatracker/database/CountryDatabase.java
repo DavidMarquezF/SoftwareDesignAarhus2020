@@ -29,14 +29,35 @@ public abstract class CountryDatabase extends RoomDatabase {
     public static final ExecutorService databaseWriteExecutor =
             Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
+    // We use this instead of the RoomDatabase.Callback to not expose database functions outside of
+    // this class. Also we have more control on how to do things in case, making the design more flexible
+    public interface InitializeCallback{
+        void OnCreateDatabase();
+        void OnOpenDatabase();
+    }
 
-    public static CountryDatabase getDatabase(final Context context){
+
+    public static CountryDatabase getDatabase(final Context context, final InitializeCallback callback) {
         if(instance == null){
             synchronized (CountryDatabase.class){
                 if(instance == null){
                     instance = Room.databaseBuilder(context.getApplicationContext(),
                             CountryDatabase.class, "country_database")
                             .fallbackToDestructiveMigration()
+                            .addCallback(new RoomDatabase.Callback(){
+                                @Override
+                                public void onCreate(@NonNull SupportSQLiteDatabase db) {
+                                    super.onCreate(db);
+
+                                    callback.OnCreateDatabase();
+                                }
+
+                                @Override
+                                public void onOpen(@NonNull SupportSQLiteDatabase db) {
+                                    super.onOpen(db);
+                                    callback.OnOpenDatabase();
+                                }
+                            })
                            // .addCallback(_roomDatabaseCallback) //Used for debugging purposes
                             .build();
                 }
@@ -52,6 +73,7 @@ public abstract class CountryDatabase extends RoomDatabase {
      * https://codelabs.developers.google.com/codelabs/android-room-with-a-view/#12
      */
     private static RoomDatabase.Callback _roomDatabaseCallback = new RoomDatabase.Callback() {
+
         @Override
         public void onOpen(@NonNull SupportSQLiteDatabase db) {
             super.onOpen(db);
@@ -65,7 +87,7 @@ public abstract class CountryDatabase extends RoomDatabase {
                     // If you want to start with more words, just add them.
                     CountryDAO dao = instance.countryDAO();
                     instance.clearAllTables();
-                    dao.addCountry(new Country("Canada", "CA", 142866, 9248));
+                  /*  dao.addCountry(new Country("Canada", "CA", 142866, 9248));
                     dao.addCountry(new Country("China", "CN", 90294, 4736));
                     dao.addCountry(new Country("Denmark", "DK", 21836, 635));
                     dao.addCountry(new Country("Germany", "DE", 269048, 9376));
@@ -75,7 +97,7 @@ public abstract class CountryDatabase extends RoomDatabase {
                     dao.addCountry(new Country("Norway", "NO", 12644, 266));
                     dao.addCountry(new Country("Russian", "RU", 1081152, 18996));
                     dao.addCountry(new Country("Sweden", "SE", 87885, 5864));
-                    dao.addCountry(new Country("USA", "US", 6674411, 197633));
+                    dao.addCountry(new Country("USA", "US", 6674411, 197633));*/
                 }
             });
         }

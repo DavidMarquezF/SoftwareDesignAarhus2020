@@ -28,6 +28,7 @@ public class EditActivity extends AppCompatActivity {
     private EditViewModel vm;
 
     private Button cancelBtn, saveBtn;
+    private boolean _initialized = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +36,8 @@ public class EditActivity extends AppCompatActivity {
         setContentView(R.layout.activity_edit);
 
         getSupportActionBar().setTitle(R.string.title_edit);
+        getSupportActionBar().setHomeButtonEnabled(false);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
 
         nameTxt = findViewById(R.id.txt_country_name);
         ratingTxt = findViewById(R.id.txt_rating);
@@ -73,13 +76,16 @@ public class EditActivity extends AppCompatActivity {
         vm.getCountry().observe(this, new Observer<Country>() {
             @Override
             public void onChanged(Country country) {
-                updateUI(country);
+                if(!_initialized)
+                    updateUI(country);
+                _initialized = true;
             }
         });
 
     }
 
     private void saveData() {
+        setResult(RESULT_OK);
         vm.saveCountry(notesEdt.getText().toString(), ratingSlider.getValue());
         finish();
     }

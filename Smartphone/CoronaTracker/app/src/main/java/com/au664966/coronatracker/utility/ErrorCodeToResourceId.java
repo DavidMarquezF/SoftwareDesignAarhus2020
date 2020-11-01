@@ -12,6 +12,10 @@ public class ErrorCodeToResourceId {
                 return R.string.error_country_exists;
             case DELETE_ERROR:
                 return R.string.error_delete;
+            case NETWORK_ERROR:
+                return R.string.error_network;
+            case INITIALIZING_ERROR:
+                return R.string.error_initializing;
             default:
                 return -1;
         }

@@ -9,6 +9,5 @@ public class CoronaApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        startService(new Intent(getApplicationContext(), RefreshDataService.class));
     }
 }

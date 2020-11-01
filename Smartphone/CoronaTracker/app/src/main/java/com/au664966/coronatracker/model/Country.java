@@ -1,6 +1,7 @@
 package com.au664966.coronatracker.model;
 
 import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
@@ -17,20 +18,28 @@ public class Country {
     private int cases;
     private int deaths;
 
+    @ColumnInfo(name = "new_confirmed")
+    private int newCases;
+
+    @ColumnInfo(name ="new_deaths")
+    private int newDeaths;
+
     private Float rating;
     private String notes;
 
     @Ignore
-    public Country(String name, String code, int cases, int deaths) {
-        this(name, code, cases, deaths, null, null);
+    public Country(String name, String code, int cases, int deaths, int newCases, int newDeaths) {
+        this(name, code, cases, deaths, newCases, newDeaths, null, null);
     }
-    public Country(String name, String code, int cases, int deaths, Float rating, String notes) {
+    public Country(String name, String code, int cases, int deaths, int newCases, int newDeaths, Float rating, String notes) {
         this.name = name;
         this.code = code;
         this.cases = cases;
         this.deaths = deaths;
         this.rating = rating;
         this.notes = notes;
+        this.newCases = newCases;
+        this.newDeaths = newDeaths;
     }
 
     public String getName() {
@@ -79,5 +88,21 @@ public class Country {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public int getNewCases() {
+        return newCases;
+    }
+
+    public void setNewCases(int newCases) {
+        this.newCases = newCases;
+    }
+
+    public int getNewDeaths() {
+        return newDeaths;
+    }
+
+    public void setNewDeaths(int newDeaths) {
+        this.newDeaths = newDeaths;
     }
 }

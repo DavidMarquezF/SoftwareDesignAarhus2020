@@ -20,6 +20,10 @@ public interface CountryDAO {
     @Query("SELECT * FROM country WHERE code LIKE :code")
     LiveData<Country> findCountry(String code);
 
+    @Query("UPDATE country SET notes = :notes, rating = :rating WHERE code LIKE :code")
+    void updateCountry(String code, String notes, Float rating);
+
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     void addCountry(Country country);
 

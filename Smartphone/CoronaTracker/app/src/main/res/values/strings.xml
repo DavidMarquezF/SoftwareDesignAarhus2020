@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Corona Tracker</string>
+    <string name="app_name">au664966 Corona Tracker 2</string>
     <string name="label_exit">Exit</string>
     <string name="label_cases">Cases:</string>
     <string name="label_deaths">Deaths:</string>
@@ -22,4 +22,14 @@
     <string name="label_add">Add</string>
     <string name="label_delete">Delete</string>
     <string name="error_delete">Couldn\'t delete country</string>
+    <string name="notif_updating">Updating Corona stats</string>
+    <string name="notif_updating_descr">Keeping you up to date with the latest corona information!</string>
+    <string name="notif_data_channel">Corona Data</string>
+    <string name="notif_latest_info">, latest information</string>
+    <string name="error_network">Error obtaining data from server</string>
+    <string name="label_new_deaths">New Deaths:</string>
+    <string name="label_new_cases">New Cases:</string>
+    <string name="error_initializing">Error obtaining initial data</string>
+    <string name="label_emtpy">Add countries by pressing the add button or set the default country list</string>
+    <string name="lable_add_default_countries">Add Default Countries</string>
 </resources>
