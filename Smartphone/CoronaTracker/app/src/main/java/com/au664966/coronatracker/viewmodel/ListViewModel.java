@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData;
 
 import com.au664966.coronatracker.model.Country;
 import com.au664966.coronatracker.model.Repository;
+import com.au664966.coronatracker.utility.LoadingStatusCallback;
 
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class ListViewModel extends AndroidViewModel {
         return repository.getInitializingDatabase();
     }
 
-    public void addCountry(String name, Repository.LoadingStatusCallback callback){
+    public void addCountry(String name, LoadingStatusCallback callback){
         repository.findAndAddCountryByName(name, callback);
     }
 

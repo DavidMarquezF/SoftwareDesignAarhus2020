@@ -8,11 +8,11 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.Transformations;
-import androidx.lifecycle.ViewModel;
 
 import com.au664966.coronatracker.model.Country;
 import com.au664966.coronatracker.model.Repository;
 import com.au664966.coronatracker.utility.Constants;
+import com.au664966.coronatracker.utility.StatusCallback;
 
 public class DetailsViewModel extends AndroidViewModel {
     private LiveData<Country> country;
@@ -36,7 +36,7 @@ public class DetailsViewModel extends AndroidViewModel {
         });
     }
 
-    public void deleteCountry(Repository.StatusCallback callback){
+    public void deleteCountry(StatusCallback callback){
         repository.deleteCountry(country.getValue(), callback);
     }
 

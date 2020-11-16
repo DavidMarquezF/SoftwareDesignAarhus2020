@@ -26,6 +26,7 @@ import com.au664966.coronatracker.service.foreground.RefreshDataService;
 import com.au664966.coronatracker.utility.Constants;
 import com.au664966.coronatracker.utility.ErrorCodeToResourceId;
 import com.au664966.coronatracker.utility.ErrorCodes;
+import com.au664966.coronatracker.utility.LoadingStatusCallback;
 import com.au664966.coronatracker.viewmodel.ListViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -60,6 +61,7 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
         emptyGroup = findViewById(R.id.empty_group);
         addDefaultCountriesBtn = findViewById(R.id.btn_add_default);
 
+        // Hide the recyclerView and disable the fab button
         updateEnabledUi(false);
         updateEmptyRecyclerView(false);
 
@@ -95,17 +97,21 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
             public void onChanged(List<Country> countries) {
                 adapter.updateCountriesList(countries);
                 Repository.InitializingStatus status = vm.getInitializingDatabse().getValue();
-                updateEmptyRecyclerView(status != Repository.InitializingStatus.LOADING && (countries == null || countries.size() <= 0));
+                updateEmptyRecyclerView(status != Repository.InitializingStatus.LOADING &&
+                        (countries == null || countries.size() <= 0));
             }
         });
 
-
+        // Observe the initialization status and act acordingly
         vm.getInitializingDatabse().observe(this, new Observer<Repository.InitializingStatus>() {
             @Override
             public void onChanged(Repository.InitializingStatus status) {
+
                 switch (status) {
                     case ERROR:
-                        Snackbar.make(coordinatorLayout, ErrorCodeToResourceId.convert(ErrorCodes.INITIALIZING_ERROR), Snackbar.LENGTH_LONG).show();
+                        Snackbar.make(coordinatorLayout,
+                                ErrorCodeToResourceId.convert(ErrorCodes.INITIALIZING_ERROR),
+                                Snackbar.LENGTH_LONG).show();
                         break;
                     case FINALIZE:
                         List<Country> countries = vm.getCountries().getValue();
@@ -118,9 +124,18 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
             }
         });
 
+        // Start the foreground service
         startService(new Intent(getApplicationContext(), RefreshDataService.class));
     }
 
+    /**
+     * Updates the visibility of the recyclerview depending on if its empty or not
+     *
+     * If it's empty an empty text will be displayed and a button to set the default countries
+     * This way the user can add all the default countries easily in case there has been an error
+     * in the initialization or in other cases
+     * @param isempty The current status of the data
+     */
     private void updateEmptyRecyclerView(boolean isempty) {
         if (isempty) {
             emptyGroup.setVisibility(View.VISIBLE);
@@ -160,9 +175,12 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
-                vm.addCountry(input.getText().toString(), new Repository.LoadingStatusCallback() {
+                // Add a country and set a callback so that we can update the ui
+                vm.addCountry(input.getText().toString(), new LoadingStatusCallback() {
                     @Override
                     public void loading() {
+                        // Since the callback methods won't necessarily be called from the UI thread
+                        // we make sure by calling runOnUiTrhead
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -177,7 +195,9 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Snackbar.make(coordinatorLayout, R.string.success_country_added, Snackbar.LENGTH_SHORT).show();
+                                Snackbar.make(coordinatorLayout,
+                                        R.string.success_country_added,
+                                        Snackbar.LENGTH_SHORT).show();
                                 fab.setEnabled(true);
                             }
                         });
@@ -188,7 +208,9 @@ public class ListActivity extends AppCompatActivity implements CountriesAdapter.
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Snackbar.make(coordinatorLayout, ErrorCodeToResourceId.convert(code), Snackbar.LENGTH_SHORT).show();
+                                Snackbar.make(coordinatorLayout,
+                                        ErrorCodeToResourceId.convert(code),
+                                        Snackbar.LENGTH_SHORT).show();
                                 fab.setEnabled(true);
                             }
                         });

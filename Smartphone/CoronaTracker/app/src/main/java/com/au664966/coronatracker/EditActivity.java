@@ -76,6 +76,10 @@ public class EditActivity extends AppCompatActivity {
         vm.getCountry().observe(this, new Observer<Country>() {
             @Override
             public void onChanged(Country country) {
+                // In case it has already been initialized don't do it again
+                // Thanks to the ViewModel this variable state will be kept even if there's rotation
+                // This is done because the service updates the data every 60 seconds, causing a
+                // call to the updateUI country, deleting all the user's input up until that point
                 if(!_initialized)
                     updateUI(country);
                 _initialized = true;
@@ -94,7 +98,8 @@ public class EditActivity extends AppCompatActivity {
         nameTxt.setText(country.getName());
         ratingSlider.setValue(country.getRating() == null ? 5 : country.getRating());
         notesEdt.setText(country.getNotes());
-        Glide.with(this).load(CountryCodeToUrl.convert(country.getCode())).apply(Constants.getFlagDefualtOptions()).into(flagImg);
+        Glide.with(this).load(CountryCodeToUrl.convert(country.getCode()))
+                .apply(Constants.getFlagDefualtOptions()).into(flagImg);
     }
 
 }

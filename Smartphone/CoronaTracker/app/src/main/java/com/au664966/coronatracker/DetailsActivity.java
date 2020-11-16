@@ -13,11 +13,11 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.au664966.coronatracker.model.Country;
-import com.au664966.coronatracker.model.Repository;
 import com.au664966.coronatracker.utility.Constants;
 import com.au664966.coronatracker.utility.CountryCodeToUrl;
 import com.au664966.coronatracker.utility.ErrorCodeToResourceId;
 import com.au664966.coronatracker.utility.ErrorCodes;
+import com.au664966.coronatracker.utility.StatusCallback;
 import com.au664966.coronatracker.viewmodel.DetailsViewModel;
 import com.bumptech.glide.Glide;
 import com.google.android.material.snackbar.Snackbar;
@@ -60,7 +60,7 @@ public class DetailsActivity extends AppCompatActivity {
         deleteBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                vm.deleteCountry(new Repository.StatusCallback() {
+                vm.deleteCountry(new StatusCallback() {
                     @Override
                     public void success() {
                         finish();
@@ -68,7 +68,9 @@ public class DetailsActivity extends AppCompatActivity {
 
                     @Override
                     public void error(ErrorCodes code) {
-                        Snackbar.make(getWindow().getDecorView().getRootView(), ErrorCodeToResourceId.convert(code), Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(getWindow().getDecorView().getRootView(),
+                                ErrorCodeToResourceId.convert(code),
+                                Snackbar.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -112,7 +114,8 @@ public class DetailsActivity extends AppCompatActivity {
             notesTxt.setText(country.getNotes());
         }
 
-        Glide.with(this).load(CountryCodeToUrl.convert(country.getCode())).apply(Constants.getFlagDefualtOptions()).into(flagImg);
+        Glide.with(this).load(CountryCodeToUrl.convert(country.getCode()))
+                .apply(Constants.getFlagDefualtOptions()).into(flagImg);
     }
 
     @Override

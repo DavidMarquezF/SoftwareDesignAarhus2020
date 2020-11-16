@@ -37,7 +37,14 @@ public abstract class CountryDatabase extends RoomDatabase {
     }
 
 
-    public static CountryDatabase getDatabase(final Context context, final InitializeCallback callback) {
+    /**
+     * Opens the database and itinitializes it by using the callback parameter
+     * @param context The context to open the db
+     * @param callback The db initialization, it will be called if the db needs to be initialized
+     * @return The CountryDB instance
+     */
+    public static CountryDatabase getDatabase(final Context context,
+                                              final InitializeCallback callback) {
         if(instance == null){
             synchronized (CountryDatabase.class){
                 if(instance == null){
@@ -58,7 +65,7 @@ public abstract class CountryDatabase extends RoomDatabase {
                                     callback.OnOpenDatabase();
                                 }
                             })
-                           // .addCallback(_roomDatabaseCallback) //Used for debugging purposes
+                            // .addCallback(_roomDatabaseCallback) //Used for debugging purposes
                             .build();
                 }
             }

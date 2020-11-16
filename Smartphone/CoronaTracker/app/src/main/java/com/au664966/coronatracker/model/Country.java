@@ -11,6 +11,11 @@ public class Country {
 
     private String name;
 
+    // The decision of using the code as the db primary code and not an id comes from the fact
+    // that all the countries need to be identified by a code. No two countries will have the same
+    // code and even if the API had a problem we shouldn't accept it at all. The only valid way
+    // to check if two countries are different is by comparing their code so it makes sense that the
+    // code is used as the identifier of each entry
     @PrimaryKey()
     @NonNull()
     private String code;

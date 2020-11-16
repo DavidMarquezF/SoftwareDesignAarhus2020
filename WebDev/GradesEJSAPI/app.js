@@ -7,7 +7,9 @@ var session = require('express-session');
 var logger = require('morgan');
 var expressLayouts = require('express-ejs-layouts');
 var cors = require('cors')
+const compression=require("compression");
 
+const _app_folder='../StudentsApp/dist/StudentsApp';
 
 require("./models/db");
 
@@ -24,6 +26,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.use(logger('dev'));
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -33,14 +36,16 @@ app.use(session({
   saveUninitialized: true,
 }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(_app_folder)));
+
 app.use(expressLayouts);
 
 
 
-app.use('/', indexRouter);
-app.use('/auth', authRouter);
 app.use('/api', apiRouter);
-
+app.get("*", (req, res) => {
+  res.sendFile( path.join(_app_folder,"index.html"))
+})
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));

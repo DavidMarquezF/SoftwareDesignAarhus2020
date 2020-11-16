@@ -1,0 +1,35 @@
+#include <stdint.h>
+#include <stdio.h>
+
+static void encode(uint8_t x){
+  uint8_t encodedByte; 
+  do{
+    encodedByte = x % 128;
+    x /= 128;
+    if(x  > 0)
+      encodedByte = encodedByte | 128;
+    putchar(encodedByte)
+  }
+  while(x > 0);
+}
+
+
+static void decode(uint8_t[] length){
+  uint8_t i = 0;
+  multiplier = 1;
+  value = 0;
+  do{
+    encodedByte = length[i];
+    value += (encodedByte & 127) * multiplier;
+    multiplier *= 128;
+    if(multiplier > 128*128*128){
+      printf("Error decoding");
+      exit(EXIT_FAILURE);
+    }
+  }
+  while((encodedByte & 128) != 0);
+  printf("%d", value);
+}
+int main(){
+ 
+}

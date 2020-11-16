@@ -56,6 +56,8 @@ public class RefreshDataService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: Initializing service");
+        // We check if the intent is null and if we have already started the service
+        // In case it's already started we don't want to do anything
         if (intent != null && !isServiceStarted) {
             startForeground(NOTIFICATION_ID, createForegroundNotif());
             updateNotificationAndData();
@@ -67,9 +69,13 @@ public class RefreshDataService extends Service {
 
 
     public void updateNotificationAndData() {
+
+        // Prepare the executor that will be on charge of doing the async work
         if (executorService == null) {
             executorService = Executors.newSingleThreadExecutor();
         }
+
+        // Get a hold of the mainHandler so that we can send notifications and act on the db
         final Handler mainHandler = new Handler(getMainLooper());
         if (currentTask != null && currentTask.isCancelled()) {
             return;
@@ -99,9 +105,16 @@ public class RefreshDataService extends Service {
 
     }
 
+    /**
+     * Creates the notification for the foreground service, which will have an icon an its background
+     * will be red
+     * @return The created notification
+     */
     private Notification createForegroundNotif() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(REFRESH_DATA_CHANNEL, getResources().getString(R.string.notif_data_channel), NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationChannel channel = new NotificationChannel(REFRESH_DATA_CHANNEL,
+                    getResources().getString(R.string.notif_data_channel),
+                    NotificationManager.IMPORTANCE_DEFAULT);
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notificationManager.createNotificationChannel(channel);
         }
@@ -117,6 +130,10 @@ public class RefreshDataService extends Service {
 
     }
 
+    /**
+     * Sends an informative notification about the latest information of a country
+     * If pressed, this notification will redirect the user to the details page of the country
+     */
     private void sendNotification() {
         List<Country> countries = repo.getCountries().getValue();
         if (countries == null || countries.size() <= 0)
@@ -164,6 +181,7 @@ public class RefreshDataService extends Service {
     public void onDestroy() {
         Log.d(TAG, "onDestroy: Destroying service");
         isServiceStarted = false;
+        // Cancel the future so that InterruptException is thrown and it can stop the recursive work
         if (currentTask != null) {
             currentTask.cancel(true);
         }

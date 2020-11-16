@@ -15,6 +15,8 @@ import com.au664966.coronatracker.model.covid19api.CountryAPI;
 import com.au664966.coronatracker.service.WebService;
 import com.au664966.coronatracker.utility.CountriesResponseCallback;
 import com.au664966.coronatracker.utility.ErrorCodes;
+import com.au664966.coronatracker.utility.LoadingStatusCallback;
+import com.au664966.coronatracker.utility.StatusCallback;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,12 +45,15 @@ public class Repository {
     private final CountryDAO _countryDao;
     private final WebService _webService;
 
+    /**
+     * Status for the initialization
+     */
     public enum InitializingStatus {
-        SUCCESS_OPEN,
-        SUCCESS_INIT,
-        ERROR,
-        LOADING,
-        FINALIZE
+        SUCCESS_OPEN, // Database opened
+        SUCCESS_INIT, // Database initialized, it only happen the first time the app is opened
+        ERROR, // Error initializing
+        LOADING, // Init process in progress
+        FINALIZE // Whole init process finished
     }
 
     public LiveData<InitializingStatus> getInitializingDatabase() {
@@ -66,32 +71,33 @@ public class Repository {
         final ReentrantLock lock = new ReentrantLock();
         lock.lock();
         // There's no need to expose the entire database to the repository so we just expose the DAO
-        CountryDatabase db = CountryDatabase.getDatabase(app.getApplicationContext(), new CountryDatabase.InitializeCallback() {
-            private boolean isInitializing = false;
+        CountryDatabase db = CountryDatabase.getDatabase(app.getApplicationContext(),
+                new CountryDatabase.InitializeCallback() {
+                    private boolean isInitializing = false;
 
-            @Override
-            public void OnCreateDatabase() {
-                isInitializing = true;
-                lock.lock();
-                addDefaultCountries();
-            }
-
-            @Override
-            public void OnOpenDatabase() {
-                if (!isInitializing)
-                    setInitializationDone(InitializingStatus.SUCCESS_OPEN);
-            }
-
-            private void setInitializationDone(final InitializingStatus status) {
-                mainHandler.post(new Runnable() {
                     @Override
-                    public void run() {
-                        _initializingDatabase.setValue(status);
-                        _initializingDatabase.setValue(InitializingStatus.FINALIZE);
+                    public void OnCreateDatabase() {
+                        isInitializing = true;
+                        lock.lock();
+                        addDefaultCountries();
+                    }
+
+                    @Override
+                    public void OnOpenDatabase() {
+                        if (!isInitializing)
+                            setInitializationDone(InitializingStatus.SUCCESS_OPEN);
+                    }
+
+                    private void setInitializationDone(final InitializingStatus status) {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                _initializingDatabase.setValue(status);
+                                _initializingDatabase.setValue(InitializingStatus.FINALIZE);
+                            }
+                        });
                     }
                 });
-            }
-        });
 
         _countryDao = db.countryDAO();
         countries = _countryDao.getAll();
@@ -105,8 +111,22 @@ public class Repository {
         return instance;
     }
 
+    /**
+     * It will add all the default countries to the database and update the initializing status
+     */
     public void addDefaultCountries(){
-        final List<String> codes = Arrays.asList("CA", "CN", "DK", "DE", "FI", "IN", "JP", "NO", "RU", "SE", "US");
+        // This is the list with all the default countries
+        final List<String> codes = Arrays.asList("CA",
+                "CN",
+                "DK",
+                "DE",
+                "FI",
+                "IN",
+                "JP",
+                "NO",
+                "RU",
+                "SE",
+                "US");
 
         final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -137,6 +157,9 @@ public class Repository {
         return countries;
     }
 
+    /**
+     * Updates all the countries with the latest data from the Corona API
+     */
     public void updateCountries() {
         // It doesn't make sense to waste bandwidth if we are not going to be able to update any country
         if (countries.getValue() == null || countries.getValue().size() <= 0)
@@ -180,6 +203,8 @@ public class Repository {
             @Override
             public void run() {
                 try {
+                    // Since the countries' code is the primary key, if a country is added that
+                    // has the an already existent code it will throw an SQL error
                     _countryDao.addCountry(country);
                 } catch (Exception ex) {
                     Log.e(TAG, "run: Add country", ex);
@@ -229,16 +254,6 @@ public class Repository {
         });
     }
 
-    public interface StatusCallback {
-        void success();
-
-        void error(ErrorCodes code);
-    }
-
-    public interface LoadingStatusCallback extends StatusCallback {
-        void loading();
-    }
-
     public void findAndAddCountryByName(final String name, final LoadingStatusCallback callback) {
         callback.loading();
         this._webService.getAllCountriesSummaries(new CountriesResponseCallback() {
@@ -246,7 +261,7 @@ public class Repository {
             public void success(CountryAPI response) {
                 for (com.au664966.coronatracker.model.covid19api.Country c : response.getCountries()) {
                     if (c.getCountry().toLowerCase().equals(name.toLowerCase())) {
-                        addCountry(countryFromAPI(c), callback); //TODO: Check if the country is already
+                        addCountry(countryFromAPI(c), callback);
                         return;
                     }
                 }
@@ -268,7 +283,7 @@ public class Repository {
                     String countryCode = c.getCountryCode().toLowerCase();
                     for (String code : codes) {
                         if (countryCode.equals(code.toLowerCase())) {
-                            addCountry(countryFromAPI(c), null); //TODO: Check if the country is already
+                            addCountry(countryFromAPI(c), null);
                         }
                     }
                 }
@@ -285,7 +300,12 @@ public class Repository {
 
 
     private Country countryFromAPI(com.au664966.coronatracker.model.covid19api.Country country) {
-        return new Country(country.getCountry(), country.getCountryCode(), country.getTotalConfirmed(), country.getTotalDeaths(), country.getNewConfirmed(), country.getNewDeaths());
+        return new Country(country.getCountry(),
+                country.getCountryCode(),
+                country.getTotalConfirmed(),
+                country.getTotalDeaths(),
+                country.getNewConfirmed(),
+                country.getNewDeaths());
     }
 
     //Threads: https://www.codejava.net/java-core/concurrency/java-concurrency-understanding-thread-pool-and-executors

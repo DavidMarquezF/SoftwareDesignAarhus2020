@@ -14,6 +14,12 @@ import com.au664966.coronatracker.utility.CountriesResponseCallback;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+/**
+ * Class used to handle all the calls to the corona service.
+ *
+ * It has been done separated from the repository so that the repository has a layer of abstraction
+ * This way it doesn't depend directly on Volley
+ */
 public class WebService {
     private static final String TAG = "WebService";
     private final RequestQueue queue;
