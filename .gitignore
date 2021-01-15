@@ -1,3 +1,11 @@
 node_modules/
 **/obj/
 **/bin/
+IOT/**/*.bin.*
+IOT/**/*.bin
+IOT/**/*.elf
+IOT/**/*.hex
+IOT/**/*.dfu
+IOT/**/*.lst
+IOT/**/*.cpp
+IOT/**/*.map
